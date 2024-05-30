@@ -48,7 +48,6 @@ class AuthController {
             try {
                 const { email, password } = req.body;
                 const admin = yield this.AuthRepository.find({ where: { role: type_1.roleType.admin } });
-                console.log(admin);
                 if (admin.length > 0) {
                     throw new Error('admin already exist');
                 }

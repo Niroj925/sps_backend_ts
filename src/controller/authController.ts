@@ -20,7 +20,6 @@ export default class AuthController{
     try {
     const { email, password } = req.body;
     const admin=await this.AuthRepository.find({where:{role:roleType.admin}});
-    console.log(admin)
     if(admin.length>0){
       throw new Error('admin already exist')
     }

@@ -2,14 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppDataSource = void 0;
 const typeorm_1 = require("typeorm");
+require('dotenv').config();
 // Configuration object for the database connection
 const dbConfig = {
     type: "mysql",
     host: "localhost",
     port: 3306,
-    username: "root",
-    password: "thapa123",
-    database: "sps",
+    username: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DB,
     entities: [
         "src/entity/entity.ts"
     ],
