@@ -30,7 +30,11 @@ __decorate([
     __metadata("design:type", String)
 ], Auth.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => doctor_entity_1.Doctor, doctor => doctor.auth, { onDelete: "CASCADE" }),
+    (0, typeorm_1.Column)({ type: 'text', default: null }),
+    __metadata("design:type", String)
+], Auth.prototype, "rToken", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => doctor_entity_1.Doctor, doctor => doctor.auth, { onDelete: "CASCADE" }),
     __metadata("design:type", Array)
 ], Auth.prototype, "doctor", void 0);
 exports.Auth = Auth = __decorate([

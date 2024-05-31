@@ -2,10 +2,10 @@ import * as argon from 'argon2'
 import { AppDataSource } from '../config/db.config';
 import { Auth } from '../entity/auth.entity';
 import { Repository } from 'typeorm';
-import {  roleType } from '../helper/type/type';
+import {  JwtPayload, roleType } from '../helper/type/type';
 import {Request,Response} from 'express'
 import { Token } from '../helper/utils/token';
-
+import * as jwt from 'jsonwebtoken'
 
 let previousOtp:any =null;
 let AuthEmail:any=null;
@@ -58,15 +58,10 @@ export default class AuthController{
     
       async login(req:Request,res:Response){
         // console.log(req.body);
-        const {email,password}=req.body;
         try{
+        const {email,password}=req.body;
             const user:any=await this.AuthRepository.findOne({where:{ email }});
-            if(!user){
-                res.status(403).json({msg:'invalid credentials'});
-            }
-    
             const match = await argon.verify(user.password,password);
-    
             if(match){
               const payload={
                 sub:user.id,
@@ -76,15 +71,31 @@ export default class AuthController{
               const token=new Token();
               const accessToken=await token.generateAcessToken(payload);
               const refreshToken=await token.generateRefreshToken(payload);
-                res.status(200).json({token:{accessToken,refreshToken}});
+              await this.AuthRepository.update(user.id, { rToken:refreshToken });
+              res.cookie('refreshToken', refreshToken, {
+                //  maxAge: 900000,
+                // expires: new Date(Date.now() + 30 * 24 * 24 * 60 * 60 * 1000), 
+                 secure:false,
+                 httpOnly: true 
+                });
+                res.status(200).json({token:{accessToken}});
             }else{
-                res.status(403).json({msg:'invalid credentials'});
+              res.status(403).json({msg:'invalid credentials'});
             }
-    
-        }catch(err){
-            console.log(err)
-            res.status(403).json({err})
-        }
+          }catch(err){
+            console.log(err);
+          }
+    }
+
+    async logout(req:any,res:any){
+      res.clearCookie('refreshToken', {
+        httpOnly: true,
+        sameSite: 'strict', // or 'lax' or 'none'
+        secure:false,
+        // secure: process.env.NODE_ENV === 'production', // Set to true if using HTTPS
+        expires: new Date(Date.now()) // Set the cookie to expire immediately
+      });
+      res.status(200).json({ message: 'Logged out, cookie deleted' });
     }
     
     async generateOtp(req:Request,res:Response) {
@@ -186,4 +197,20 @@ export default class AuthController{
       res.status(403).json({err})
     }
       }
+
+    async refresh(req:any,res:any){
+      const refreshToken = req.cookies.refreshToken;
+      const userAuth=await this.AuthRepository.findOne({where:{rToken:refreshToken}});
+      if(!userAuth){
+        res.status(403).json('invalid')
+      }
+      if(!process.env.RT_SECRET){
+        throw new Error('not found');
+    }
+      const token=new Token();
+      const payload:any = jwt.verify(refreshToken, process.env.RT_SECRET);
+  
+      const accessToken=await token.generateAcessToken(payload);
+      res.status(200).json({token:{accessToken}})
+    }
 }

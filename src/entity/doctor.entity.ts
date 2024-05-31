@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { parentEntity } from "./";
 import { Patient } from "./patient.entity";
 import { Auth } from "./auth.entity";
@@ -31,7 +31,8 @@ export class Doctor extends parentEntity {
     @Column()
     description:string;
 
-    @ManyToOne(()=>Auth,auth=>auth.doctor,{onDelete:'CASCADE'})
+    @OneToOne(()=>Auth,auth=>auth.doctor,{onDelete:'CASCADE'})
+    @JoinColumn({name:'authId'})
     auth:Auth
 
     @OneToMany(()=>Patient,patient=>patient.doctor,{onDelete:"CASCADE"})

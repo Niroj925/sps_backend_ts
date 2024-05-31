@@ -11,9 +11,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const doctor_entity_1 = require("../entity/doctor.entity");
 const db_config_1 = require("../config/db.config");
+const auth_entity_1 = require("../entity/auth.entity");
+const type_1 = require("../helper/type/type");
 class DoctorController {
     constructor() {
         this.doctorRepository = db_config_1.AppDataSource.getRepository(doctor_entity_1.Doctor);
+        this.authRepository = db_config_1.AppDataSource.getRepository(auth_entity_1.Auth);
     }
     createProfile(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -33,7 +36,7 @@ class DoctorController {
                     visitPatient: 0,
                     hospital,
                     description,
-                    userId: user.jwtPayload.sub
+                    auth: { id: user.jwtPayload.sub }
                 });
                 //   console.log('New Doctor created:', newDoctor.toJSON()); 
                 // await client.del('doctors')
@@ -56,6 +59,29 @@ class DoctorController {
                 // await client.set('doctors', JSON.stringify(doctor));
                 // await client.expire('doctors', 20)//expire after 10 minutes
                 // console.log('cached not found');
+                res.status(200).json(doctor);
+            }
+            catch (err) {
+                console.log(err);
+            }
+        });
+    }
+    getAuthDoctors(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const refreshToken = req.cookies.refreshToken; // Change to cookies if not using signed cookies
+            //   console.log('Refresh Token:', refreshToken);
+            try {
+                const doctor = yield this.authRepository.find({
+                    where: { role: type_1.roleType.doctor },
+                    relations: ['doctor'],
+                    select: {
+                        id: true,
+                        email: true,
+                        doctor: {
+                            name: true
+                        }
+                    }
+                });
                 res.status(200).json(doctor);
             }
             catch (err) {

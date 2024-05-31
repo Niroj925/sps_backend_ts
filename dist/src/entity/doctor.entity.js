@@ -50,7 +50,8 @@ __decorate([
     __metadata("design:type", String)
 ], Doctor.prototype, "description", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => auth_entity_1.Auth, auth => auth.doctor, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.OneToOne)(() => auth_entity_1.Auth, auth => auth.doctor, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinColumn)({ name: 'authId' }),
     __metadata("design:type", auth_entity_1.Auth)
 ], Doctor.prototype, "auth", void 0);
 __decorate([

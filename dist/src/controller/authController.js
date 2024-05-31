@@ -37,6 +37,7 @@ const db_config_1 = require("../config/db.config");
 const auth_entity_1 = require("../entity/auth.entity");
 const type_1 = require("../helper/type/type");
 const token_1 = require("../helper/utils/token");
+const jwt = __importStar(require("jsonwebtoken"));
 let previousOtp = null;
 let AuthEmail = null;
 class AuthController {
@@ -89,12 +90,9 @@ class AuthController {
     login(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             // console.log(req.body);
-            const { email, password } = req.body;
             try {
+                const { email, password } = req.body;
                 const user = yield this.AuthRepository.findOne({ where: { email } });
-                if (!user) {
-                    res.status(403).json({ msg: 'invalid credentials' });
-                }
                 const match = yield argon.verify(user.password, password);
                 if (match) {
                     const payload = {
@@ -105,7 +103,14 @@ class AuthController {
                     const token = new token_1.Token();
                     const accessToken = yield token.generateAcessToken(payload);
                     const refreshToken = yield token.generateRefreshToken(payload);
-                    res.status(200).json({ token: { accessToken, refreshToken } });
+                    yield this.AuthRepository.update(user.id, { rToken: refreshToken });
+                    res.cookie('refreshToken', refreshToken, {
+                        //  maxAge: 900000,
+                        // expires: new Date(Date.now() + 30 * 24 * 24 * 60 * 60 * 1000), 
+                        secure: false,
+                        httpOnly: true
+                    });
+                    res.status(200).json({ token: { accessToken } });
                 }
                 else {
                     res.status(403).json({ msg: 'invalid credentials' });
@@ -113,8 +118,19 @@ class AuthController {
             }
             catch (err) {
                 console.log(err);
-                res.status(403).json({ err });
             }
+        });
+    }
+    logout(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                sameSite: 'strict', // or 'lax' or 'none'
+                secure: false,
+                // secure: process.env.NODE_ENV === 'production', // Set to true if using HTTPS
+                expires: new Date(Date.now()) // Set the cookie to expire immediately
+            });
+            res.status(200).json({ message: 'Logged out, cookie deleted' });
         });
     }
     generateOtp(req, res) {
@@ -220,6 +236,22 @@ class AuthController {
                 console.log(err);
                 res.status(403).json({ err });
             }
+        });
+    }
+    refresh(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const refreshToken = req.cookies.refreshToken;
+            const userAuth = yield this.AuthRepository.findOne({ where: { rToken: refreshToken } });
+            if (!userAuth) {
+                res.status(403).json('invalid');
+            }
+            if (!process.env.RT_SECRET) {
+                throw new Error('not found');
+            }
+            const token = new token_1.Token();
+            const payload = jwt.verify(refreshToken, process.env.RT_SECRET);
+            const accessToken = yield token.generateAcessToken(payload);
+            res.status(200).json({ token: { accessToken } });
         });
     }
 }

@@ -41,13 +41,20 @@ const validateRT = (req, res, next) => {
         next();
     }
     catch (err) {
-        return res.status(403).json({ success: false, message: "Invalid token" });
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ success: false, message: "Token has expired" });
+        }
+        else if (err.name === 'JsonWebTokenError') {
+            return res.status(403).json({ success: false, message: "Invalid token" });
+        }
+        else {
+            return res.status(403).json({ success: false, message: "Token verification failed" });
+        }
     }
 };
 exports.validateRT = validateRT;
 const validateAT = (req, res, next) => {
     const token = req.headers.token;
-    // console.log(token);
     if (!token) {
         return res.status(403).json({ success: false, message: "Token not provided" });
     }
@@ -60,7 +67,16 @@ const validateAT = (req, res, next) => {
         next();
     }
     catch (err) {
-        return res.status(403).json({ success: false, message: "Invalid token" });
+        // return res.status(403).json({ success: false, message: "Invalid token" });
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ success: false, message: "Token has expired" });
+        }
+        else if (err.name === 'JsonWebTokenError') {
+            return res.status(403).json({ success: false, message: "Invalid token" });
+        }
+        else {
+            return res.status(403).json({ success: false, message: "Token verification failed" });
+        }
     }
 };
 exports.validateAT = validateAT;

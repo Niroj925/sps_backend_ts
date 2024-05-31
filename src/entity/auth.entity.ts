@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { parentEntity } from ".";
 import { roleType } from "../helper/type/type";
 import { Doctor } from "./doctor.entity";
@@ -15,6 +15,9 @@ export class Auth extends parentEntity {
     @Column()
     role:roleType;
 
-    @OneToMany(()=>Doctor,doctor=>doctor.auth,{onDelete:"CASCADE"})
+    @Column({type:'text',default:null})
+    rToken:string;
+
+    @OneToOne(()=>Doctor,doctor=>doctor.auth,{onDelete:"CASCADE"})
     doctor:Doctor[];
 }

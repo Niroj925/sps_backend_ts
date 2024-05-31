@@ -53,7 +53,7 @@ class Token {
                 throw new Error('not found');
             }
             const token = jwt.sign({ jwtPayload }, process.env.AT_SECRET, {
-                expiresIn: '45m'
+                expiresIn: '2m'
             });
             return token;
         });

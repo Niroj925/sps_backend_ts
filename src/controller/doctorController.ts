@@ -2,13 +2,16 @@ import { Request,Response } from "express";
 import { Repository } from "typeorm";
 import { Doctor } from "../entity/doctor.entity";
 import { AppDataSource } from "../config/db.config";
+import { Auth } from "../entity/auth.entity";
+import { roleType } from "../helper/type/type";
 
 export default class DoctorController{
 
     private doctorRepository: Repository<Doctor>;
-
+    private authRepository: Repository<Auth>;
     constructor() {
       this.doctorRepository = AppDataSource.getRepository(Doctor);
+      this.authRepository = AppDataSource.getRepository(Auth);
     }
     
     async createProfile(req:any, res:Response){
@@ -28,7 +31,7 @@ export default class DoctorController{
                 visitPatient: 0,
                 hospital,
                 description,
-                userId: user.jwtPayload.sub
+                auth:{id:user.jwtPayload.sub}
             });
             //   console.log('New Doctor created:', newDoctor.toJSON()); 
 
@@ -53,6 +56,30 @@ export default class DoctorController{
             // await client.set('doctors', JSON.stringify(doctor));
             // await client.expire('doctors', 20)//expire after 10 minutes
             // console.log('cached not found');
+
+            res.status(200).json(doctor);
+
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
+    async getAuthDoctors(req:Request, res:Response) {
+  const refreshToken = req.cookies.refreshToken; // Change to cookies if not using signed cookies
+//   console.log('Refresh Token:', refreshToken);
+        try {
+         
+            const doctor = await this.authRepository.find({
+                where:{role:roleType.doctor},
+                relations:['doctor'],
+                select:{
+                    id:true,
+                    email:true,
+                    doctor:{
+                        name:true
+                    }
+                }
+            });
 
             res.status(200).json(doctor);
 
